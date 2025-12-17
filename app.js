@@ -1,6 +1,9 @@
 // ======= Storage keys =======
 const LS_USER_PLAN = "studyPlanner.userPlan";
 const LS_ACTIVE_PLAN = "studyPlanner.activePlan";
+const LS_ACTIVE_SCREEN = "studyPlanner.activeScreen";
+
+const SCREENS = ["dashboard", "subjects", "exams", "tasks", "today"];
 
 // ======= Demo plan (read-only) =======
 const DEMO_PLAN = {
@@ -17,11 +20,15 @@ const DEMO_PLAN = {
   ]
 };
 
-// ======= Helpers =======
+// ======= Helpers: plan storage =======
 function loadUserPlan() {
   const raw = localStorage.getItem(LS_USER_PLAN);
   if (!raw) return null;
-  try { return JSON.parse(raw); } catch { return null; }
+  try {
+    return JSON.parse(raw);
+  } catch {
+    return null;
+  }
 }
 
 function saveUserPlan(plan) {
@@ -32,7 +39,7 @@ function getActivePlanMode() {
   const stored = localStorage.getItem(LS_ACTIVE_PLAN);
   if (stored === "demo" || stored === "user") return stored;
 
-  // Default rule: if no user plan exists -> demo, else user
+  // Default: if no user plan exists -> demo, else user
   return loadUserPlan() ? "user" : "demo";
 }
 
@@ -49,6 +56,18 @@ function getActivePlanData() {
   return DEMO_PLAN;
 }
 
+// ======= Helpers: screen routing =======
+function getActiveScreen() {
+  const stored = localStorage.getItem(LS_ACTIVE_SCREEN);
+  if (SCREENS.includes(stored)) return stored;
+  return "dashboard";
+}
+
+function setActiveScreen(screen) {
+  if (!SCREENS.includes(screen)) return;
+  localStorage.setItem(LS_ACTIVE_SCREEN, screen);
+}
+
 function showBannerIfDemo() {
   const banner = document.getElementById("banner");
   const mode = getActivePlanMode();
@@ -62,25 +81,85 @@ function showBannerIfDemo() {
   }
 }
 
-function render() {
-  showBannerIfDemo();
-  const label = document.getElementById("activePlanLabel");
-  label.textContent = getActivePlanMode().toUpperCase();
+function renderScreen() {
+  const screen = getActiveScreen();
+  const mode = getActivePlanMode();
+  const plan = getActivePlanData();
+
+  // Labels
+  document.getElementById("activeScreenLabel").textContent = screen;
+
+  // Tabs highlight
+  document.querySelectorAll(".tab").forEach(btn => {
+    btn.classList.toggle("active", btn.dataset.screen === screen);
+  });
+
+  // Content
+  const container = document.getElementById("screenContainer");
+
+  if (screen === "dashboard") {
+    container.innerHTML = `
+      <h2>Dashboard</h2>
+      <p>Next 7 days + overdue will be built in a later chapter.</p>
+      <p><strong>Plan name:</strong> ${plan.meta?.name || "-"}</p>
+      <p><strong>Mode:</strong> ${mode.toUpperCase()}</p>
+    `;
+    return;
+  }
+
+  if (screen === "subjects") {
+    container.innerHTML = `
+      <h2>Subjects</h2>
+      <p>CRUD will be built in later chapters.</p>
+      <p>Subjects in this plan: <strong>${plan.subjects?.length ?? 0}</strong></p>
+    `;
+    return;
+  }
+
+  if (screen === "exams") {
+    container.innerHTML = `
+      <h2>Exams</h2>
+      <p>CRUD + sort by date will be built later.</p>
+      <p>Exams in this plan: <strong>${plan.exams?.length ?? 0}</strong></p>
+    `;
+    return;
+  }
+
+  if (screen === "tasks") {
+    container.innerHTML = `
+      <h2>Tasks</h2>
+      <p>CRUD + filters will be built later.</p>
+      <p>Tasks in this plan: <strong>${plan.tasks?.length ?? 0}</strong></p>
+    `;
+    return;
+  }
+
+  if (screen === "today") {
+    container.innerHTML = `
+      <h2>Today</h2>
+      <p>Due today + next 24h will be built later.</p>
+      <p>This is a placeholder screen.</p>
+    `;
+    return;
+  }
+
+  container.innerHTML = `<h2>Unknown screen</h2>`;
 }
 
-// ======= UI actions =======
+function render() {
+  showBannerIfDemo();
+  document.getElementById("activePlanLabel").textContent = getActivePlanMode().toUpperCase();
+  renderScreen();
+}
+
+// ======= UI actions: top buttons =======
 document.getElementById("btnViewDemo").addEventListener("click", () => {
   setActivePlanMode("demo");
   render();
 });
 
 document.getElementById("btnMyPlan").addEventListener("click", () => {
-  // If no user plan exists, stay in demo until they create one
-  if (!loadUserPlan()) {
-    setActivePlanMode("demo");
-  } else {
-    setActivePlanMode("user");
-  }
+  setActivePlanMode(loadUserPlan() ? "user" : "demo");
   render();
 });
 
@@ -106,6 +185,14 @@ document.getElementById("btnExport").addEventListener("click", () => {
 
 document.getElementById("btnImport").addEventListener("click", () => {
   alert("Import is coming in a later chapter.");
+});
+
+// ======= UI actions: screen tabs (IMPORTANT: only once) =======
+document.querySelectorAll(".tab").forEach(btn => {
+  btn.addEventListener("click", () => {
+    setActiveScreen(btn.dataset.screen);
+    render();
+  });
 });
 
 // ======= Boot =======
