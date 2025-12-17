@@ -19,26 +19,25 @@
   </header>
 
   <main class="container">
-  <div id="banner" class="banner"></div>
+    <div id="banner" class="banner"></div>
 
-  <div class="tabs">
-    <button class="tab" data-screen="dashboard" id="tabDashboard">Dashboard</button>
-    <button class="tab" data-screen="subjects" id="tabSubjects">Subjects</button>
-    <button class="tab" data-screen="exams" id="tabExams">Exams</button>
-    <button class="tab" data-screen="tasks" id="tabTasks">Tasks</button>
-    <button class="tab" data-screen="today" id="tabToday">Today</button>
-  </div>
-
-  <section class="card">
-    <div class="meta-row">
-      <div><strong>Active plan:</strong> <span id="activePlanLabel">-</span></div>
-      <div><strong>Screen:</strong> <span id="activeScreenLabel">-</span></div>
+    <div class="tabs">
+      <button class="tab" data-screen="dashboard">Dashboard</button>
+      <button class="tab" data-screen="subjects">Subjects</button>
+      <button class="tab" data-screen="exams">Exams</button>
+      <button class="tab" data-screen="tasks">Tasks</button>
+      <button class="tab" data-screen="today">Today</button>
     </div>
-  </section>
 
-  <section class="card" id="screenContainer" style="margin-top: 16px;"></section>
-</main>
+    <section class="card">
+      <div class="meta-row">
+        <div><strong>Active plan:</strong> <span id="activePlanLabel">-</span></div>
+        <div><strong>Screen:</strong> <span id="activeScreenLabel">-</span></div>
+      </div>
+    </section>
 
+    <section class="card" id="screenContainer" style="margin-top:16px;"></section>
+  </main>
 
   <script src="app.js"></script>
 </body>
