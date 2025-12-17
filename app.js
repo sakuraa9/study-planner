@@ -1,34 +1,23 @@
-// ======= Storage keys =======
 const LS_USER_PLAN = "studyPlanner.userPlan";
 const LS_ACTIVE_PLAN = "studyPlanner.activePlan";
 const LS_ACTIVE_SCREEN = "studyPlanner.activeScreen";
 
 const SCREENS = ["dashboard", "subjects", "exams", "tasks", "today"];
 
-// ======= Demo plan (read-only) =======
 const DEMO_PLAN = {
   meta: { name: "Roy's Demo Plan", createdAt: "2025-12-17" },
   subjects: [
     { id: "sub-math", name: "Discrete Math", teacher: "TBD", notes: "", color: "#4f46e5" },
     { id: "sub-it", name: "IT Fundamentals", teacher: "TBD", notes: "", color: "#16a34a" }
   ],
-  exams: [
-    { id: "ex-1", subjectId: "sub-math", title: "Discrete Math Exam", datetime: "2025-12-27T10:00:00", location: "Room 101", notes: "" }
-  ],
-  tasks: [
-    { id: "t-1", subjectId: "sub-it", title: "Read chapter 3", dueDate: "2025-12-20", status: "todo", priority: "medium", notes: "" }
-  ]
+  exams: [],
+  tasks: []
 };
 
-// ======= Helpers: plan storage =======
 function loadUserPlan() {
   const raw = localStorage.getItem(LS_USER_PLAN);
   if (!raw) return null;
-  try {
-    return JSON.parse(raw);
-  } catch {
-    return null;
-  }
+  try { return JSON.parse(raw); } catch { return null; }
 }
 
 function saveUserPlan(plan) {
@@ -37,9 +26,7 @@ function saveUserPlan(plan) {
 
 function getActivePlanMode() {
   const stored = localStorage.getItem(LS_ACTIVE_PLAN);
-  if (stored === "demo" || stored === "user") return stored;
-
-  // Default: if no user plan exists -> demo, else user
+  if (stored) return stored;
   return loadUserPlan() ? "user" : "demo";
 }
 
@@ -48,102 +35,112 @@ function setActivePlanMode(mode) {
 }
 
 function getActivePlanData() {
-  const mode = getActivePlanMode();
-  if (mode === "user") {
-    const userPlan = loadUserPlan();
-    return userPlan || DEMO_PLAN; // fallback
-  }
-  return DEMO_PLAN;
+  return getActivePlanMode() === "user"
+    ? (loadUserPlan() || DEMO_PLAN)
+    : DEMO_PLAN;
 }
 
-// ======= Helpers: screen routing =======
 function getActiveScreen() {
-  const stored = localStorage.getItem(LS_ACTIVE_SCREEN);
-  if (SCREENS.includes(stored)) return stored;
-  return "dashboard";
+  const s = localStorage.getItem(LS_ACTIVE_SCREEN);
+  return SCREENS.includes(s) ? s : "dashboard";
 }
 
-function setActiveScreen(screen) {
-  if (!SCREENS.includes(screen)) return;
-  localStorage.setItem(LS_ACTIVE_SCREEN, screen);
+function setActiveScreen(s) {
+  localStorage.setItem(LS_ACTIVE_SCREEN, s);
 }
 
-function showBannerIfDemo() {
-  const banner = document.getElementById("banner");
-  const mode = getActivePlanMode();
+function renderSubjects() {
+  const plan = getActivePlanData();
+  const isDemo = getActivePlanMode() === "demo";
 
-  if (mode === "demo") {
-    banner.style.display = "block";
-    banner.textContent = "You are viewing the Demo Plan. Create your own plan to start.";
+  let html = `<h2>Subjects</h2>`;
+
+  if (isDemo) {
+    html += `<p><em>Demo plan is read-only.</em></p>`;
   } else {
-    banner.style.display = "none";
-    banner.textContent = "";
+    html += `<button id="addSubjectBtn">Add Subject</button>`;
+  }
+
+  plan.subjects.forEach(sub => {
+    html += `
+      <div class="subject-row">
+        <div style="display:flex;align-items:center">
+          <div class="subject-color" style="background:${sub.color || "#999"}"></div>
+          <strong>${sub.name}</strong>
+        </div>
+        <div class="subject-actions">
+          ${!isDemo ? `
+            <button data-id="${sub.id}" class="editSubject">Edit</button>
+            <button data-id="${sub.id}" class="deleteSubject">Delete</button>
+          ` : ""}
+        </div>
+      </div>
+    `;
+  });
+
+  const container = document.getElementById("screenContainer");
+  container.innerHTML = html;
+
+  if (!isDemo) {
+    document.getElementById("addSubjectBtn").onclick = () => {
+      const name = prompt("Subject name:");
+      if (!name) return;
+
+      const plan = loadUserPlan();
+      plan.subjects.push({
+        id: crypto.randomUUID(),
+        name,
+        teacher: "",
+        notes: "",
+        color: "#999"
+      });
+
+      saveUserPlan(plan);
+      render();
+    };
+
+    container.querySelectorAll(".deleteSubject").forEach(btn => {
+      btn.onclick = () => {
+        const plan = loadUserPlan();
+        plan.subjects = plan.subjects.filter(s => s.id !== btn.dataset.id);
+        saveUserPlan(plan);
+        render();
+      };
+    });
   }
 }
 
 function renderScreen() {
   const screen = getActiveScreen();
-  const mode = getActivePlanMode();
-  const plan = getActivePlanData();
-
-  // Labels
   document.getElementById("activeScreenLabel").textContent = screen;
 
-  // Tabs highlight
-  document.querySelectorAll(".tab").forEach(btn => {
-    btn.classList.toggle("active", btn.dataset.screen === screen);
-  });
+  document.querySelectorAll(".tab").forEach(b =>
+    b.classList.toggle("active", b.dataset.screen === screen)
+  );
 
-  // Content
-  const container = document.getElementById("screenContainer");
+  const c = document.getElementById("screenContainer");
 
   if (screen === "dashboard") {
-    container.innerHTML = `
-      <h2>Dashboard</h2>
-      <p>Next 7 days + overdue will be built in a later chapter.</p>
-      <p><strong>Plan name:</strong> ${plan.meta?.name || "-"}</p>
-      <p><strong>Mode:</strong> ${mode.toUpperCase()}</p>
-    `;
+    c.innerHTML = `<h2>Dashboard</h2><p>Coming next.</p>`;
     return;
   }
 
   if (screen === "subjects") {
-    container.innerHTML = `
-      <h2>Subjects</h2>
-      <p>CRUD will be built in later chapters.</p>
-      <p>Subjects in this plan: <strong>${plan.subjects?.length ?? 0}</strong></p>
-    `;
+    renderSubjects();
     return;
   }
 
-  if (screen === "exams") {
-    container.innerHTML = `
-      <h2>Exams</h2>
-      <p>CRUD + sort by date will be built later.</p>
-      <p>Exams in this plan: <strong>${plan.exams?.length ?? 0}</strong></p>
-    `;
-    return;
-  }
+  c.innerHTML = `<h2>${screen}</h2><p>Not built yet.</p>`;
+}
 
-  if (screen === "tasks") {
-    container.innerHTML = `
-      <h2>Tasks</h2>
-      <p>CRUD + filters will be built later.</p>
-      <p>Tasks in this plan: <strong>${plan.tasks?.length ?? 0}</strong></p>
-    `;
-    return;
+function showBannerIfDemo() {
+  const banner = document.getElementById("banner");
+  if (getActivePlanMode() === "demo") {
+    banner.style.display = "block";
+    banner.textContent = "You are viewing the Demo Plan. Create your own plan to start.";
+  } else {
+    banner.style.display = "none";
   }
-
-  if (screen === "today") {
-    container.innerHTML = `
-      <h2>Today</h2>
-      <p>Due today + next 24h will be built later.</p>
-      <p>This is a placeholder screen.</p>
-    `;
-    return;
-  }
-
-  container.innerHTML = `<h2>Unknown screen</h2>`;
 }
 
 function render() {
@@ -152,48 +149,28 @@ function render() {
   renderScreen();
 }
 
-// ======= UI actions: top buttons =======
-document.getElementById("btnViewDemo").addEventListener("click", () => {
+document.getElementById("btnViewDemo").onclick = () => {
   setActivePlanMode("demo");
   render();
-});
+};
 
-document.getElementById("btnMyPlan").addEventListener("click", () => {
+document.getElementById("btnMyPlan").onclick = () => {
   setActivePlanMode(loadUserPlan() ? "user" : "demo");
   render();
-});
+};
 
-document.getElementById("btnCreateNew").addEventListener("click", () => {
-  const ok = confirm("This will reset your current User Plan. Continue?");
-  if (!ok) return;
-
-  const freshPlan = {
-    meta: { name: "My Plan", createdAt: new Date().toISOString() },
-    subjects: [],
-    exams: [],
-    tasks: []
-  };
-
-  saveUserPlan(freshPlan);
+document.getElementById("btnCreateNew").onclick = () => {
+  if (!confirm("Reset your User Plan?")) return;
+  saveUserPlan({ meta: {}, subjects: [], exams: [], tasks: [] });
   setActivePlanMode("user");
   render();
-});
+};
 
-document.getElementById("btnExport").addEventListener("click", () => {
-  alert("Export is coming in a later chapter.");
-});
-
-document.getElementById("btnImport").addEventListener("click", () => {
-  alert("Import is coming in a later chapter.");
-});
-
-// ======= UI actions: screen tabs (IMPORTANT: only once) =======
 document.querySelectorAll(".tab").forEach(btn => {
-  btn.addEventListener("click", () => {
+  btn.onclick = () => {
     setActiveScreen(btn.dataset.screen);
     render();
-  });
+  };
 });
 
-// ======= Boot =======
 render();
