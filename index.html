@@ -8,13 +8,20 @@
 </head>
 <body>
   <header class="topbar">
-    <h1>Study Planner</h1>
+    <div class="brand">
+      <h1>Study Planner</h1>
+      <div class="subtitle">Static app (LocalStorage). No accounts.</div>
+    </div>
+
     <nav class="nav">
       <button id="btnViewDemo" type="button">View Demo</button>
       <button id="btnMyPlan" type="button">My Plan</button>
       <button id="btnCreateNew" type="button">Create New Plan</button>
       <button id="btnExport" type="button">Export</button>
       <button id="btnImport" type="button">Import</button>
+
+      <!-- hidden file input used by Import -->
+      <input id="importFile" type="file" accept="application/json" style="display:none;" />
     </nav>
   </header>
 
@@ -32,12 +39,40 @@
     <section class="card">
       <div class="meta-row">
         <div><strong>Active plan:</strong> <span id="activePlanLabel">-</span></div>
+        <div><strong>Plan name:</strong> <span id="planNameLabel">-</span></div>
         <div><strong>Screen:</strong> <span id="activeScreenLabel">-</span></div>
       </div>
     </section>
 
     <section class="card" id="screenContainer" style="margin-top:16px;"></section>
   </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+      <div>Made by Roni Msallam © 2025</div>
+      <div><a href="https://github.com/sakuraa9" target="_blank" rel="noreferrer">https://github.com/sakuraa9</a></div>
+    </div>
+  </footer>
+
+  <!-- Modal (one modal reused for all forms) -->
+  <div id="modalBackdrop" class="modal-backdrop" style="display:none;">
+    <div class="modal">
+      <div class="modal-header">
+        <h3 id="modalTitle">Modal</h3>
+        <button id="modalClose" class="icon-btn" type="button" aria-label="Close">✕</button>
+      </div>
+
+      <div id="modalBody" class="modal-body"></div>
+
+      <div class="modal-footer">
+        <div id="modalHint" class="hint"></div>
+        <div class="modal-actions">
+          <button id="modalCancel" type="button">Cancel</button>
+          <button id="modalPrimary" type="button">Save</button>
+        </div>
+      </div>
+    </div>
+  </div>
 
   <script src="app.js"></script>
 </body>
